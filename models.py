@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, Column, Integer, String, Table, ForeignKey
+from sqlalchemy import Column, Integer, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship, mapped_column, Mapped
+from sqlalchemy.orm import relationship, mapped_column, Mapped
 
 
 Base = declarative_base()
@@ -18,8 +18,8 @@ class User(Base):
     first_name: Mapped[str]
     username: Mapped[str]
     last_name: Mapped[str]
-    tracked_series: Mapped[str]
-    watched_series: Mapped[str]
+    tracked_series: Mapped[str] = mapped_column(nullable=True)
+    watched_series: Mapped[str] = mapped_column(nullable=True)
     tg_user_id: Mapped[int]
 
     watching_serials = relationship('Serial', secondary=user_serial, back_populates='watching_users')
