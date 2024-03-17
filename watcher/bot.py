@@ -1,6 +1,5 @@
-import webbrowser
 import telebot
-from settings import BOT_TOKEN, Session, SUPPORTED_SITES
+from config.settings import BOT_TOKEN, Session, SUPPORTED_SITES
 from models import User, Serial, Site
 from functions import parse_url
 
@@ -8,9 +7,9 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 
 @bot.message_handler(commands=['start'])
-""" Запускается при первом старте бота, сохраняет данные пользователя """
-
 def start_bot(message):
+    """ Запускается при первом старте бота, сохраняет данные пользователя """
+
     with Session() as session:
         existing_user = session.query(User).filter_by(tg_user_id=message.from_user.id).first()
         if existing_user is None:

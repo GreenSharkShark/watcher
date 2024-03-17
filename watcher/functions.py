@@ -1,5 +1,5 @@
-from settings import Session
-from models import Site, User
+from config.settings import Session
+from models import Site
 
 
 def parse_url(url: str) -> str:
