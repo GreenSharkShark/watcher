@@ -1,5 +1,5 @@
-from config.settings import Session
-from models import Site
+from config.settings import Session, bot
+from watcher.models import Site
 
 
 def parse_url(url: str) -> str:
@@ -18,3 +18,10 @@ def make_new_site_object(site_url: str, site_name: str) -> None:
 
 
 # make_new_site_object('https://kinogo.fm/', 'kinogo.fm')
+
+
+def send_a_notificatio_about_new_episode(watching_users: list, notification: str):
+    for user in watching_users:
+        telegram_id = user.tg_user_id
+        bot.send_message(telegram_id, notification)
+

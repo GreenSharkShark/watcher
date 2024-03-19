@@ -30,6 +30,8 @@ class Serial(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     url: Mapped[str]
+    last_episode: Mapped[str] = mapped_column(nullable=True)
+    last_season: Mapped[str] = mapped_column(nullable=True)
 
     watching_users = relationship('User', secondary=user_serial, back_populates='watching_serials')
 

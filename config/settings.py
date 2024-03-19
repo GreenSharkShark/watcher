@@ -1,3 +1,4 @@
+import telebot
 from dotenv import load_dotenv
 from pathlib import Path
 import os
@@ -18,8 +19,15 @@ DB_NAME = os.getenv('DB_NAME')
 
 SUPPORTED_SITES = ['kinogo.fm']
 
+bot = telebot.TeleBot(BOT_TOKEN)
+
+
+def make_connection():
+    return f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+
 engine = create_engine(
-    url=f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}",
+    url=make_connection(),
     pool_size=5,
     max_overflow=10,
 )

@@ -1,9 +1,7 @@
-import telebot
+from config.settings import bot
 from config.settings import BOT_TOKEN, Session, SUPPORTED_SITES
 from models import User, Serial, Site
 from functions import parse_url
-
-bot = telebot.TeleBot(BOT_TOKEN)
 
 
 @bot.message_handler(commands=['start'])
@@ -20,8 +18,13 @@ def start_bot(message):
             new_user.tg_user_id = message.from_user.id
             session.add(new_user)
             session.commit()
+            notif = 'Новый пользователь зарегистрирован'
+            print(notif)
+            bot.send_message(message.from_user.id, notif)
         else:
-            pass
+            notif = 'Пользователь уже зарегистрирован'
+            print(notif)
+            bot.send_message(message.from_user.id, notif)
     bot.send_message(message.chat.id, 'Что умеет этот бот?')
 
 
@@ -49,3 +52,6 @@ def track(message):
 
     else:
         bot.send_message(text='Сайт не поддерживается', chat_id=message.chat.id)
+
+
+bot.polling(none_stop=True)
