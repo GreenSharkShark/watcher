@@ -1,11 +1,14 @@
 from config.settings import Session, bot
-from watcher.models import Site
+from watcher.models import Site, User
 
 
-def parse_url(url: str) -> str:
+def parse_url(url: str) -> str or dict:
     """ Парсит ссылку на сайт, чтобы убедиться что с этого сайта можно парсить инфу """
-    site = url.split('/')
-    return site[2]
+    try:
+        site = url.split('/')
+        return {'site': site[2]}
+    except IndexError:
+        return {'error': 'Вы ввели неверную ссылку. Ссылка должна быть в формате "https://название.сайта/..."'}
 
 
 def make_new_site_object(site_url: str, site_name: str) -> None:
@@ -20,8 +23,26 @@ def make_new_site_object(site_url: str, site_name: str) -> None:
 # make_new_site_object('https://kinogo.fm/', 'kinogo.fm')
 
 
-def send_a_notificatio_about_new_episode(watching_users: list, notification: str):
+def send_a_notification_about_new_episode(watching_users: list, notification: str) -> None:
+    """ Отправляет уведомление о выходе новой серии """
+
     for user in watching_users:
         telegram_id = user.tg_user_id
         bot.send_message(telegram_id, notification)
 
+
+def save_user_data(message) -> None:
+    """ Сохраняет данные пользователя при первом старте бота """
+    with Session() as session:
+        existing_user = session.query(User).filter_by(tg_user_id=message.from_user.id).first()
+        if existing_user is None:
+            new_user = User()
+            new_user.username = message.from_user.username
+            new_user.first_name = message.from_user.first_name
+            new_user.last_name = message.from_user.last_name
+            new_user.tg_user_id = message.from_user.id
+            session.add(new_user)
+            session.commit()
+        else:
+            notif = 'Пользователь уже зарегистрирован'
+            bot.send_message(message.from_user.id, notif)
