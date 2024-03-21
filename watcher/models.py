@@ -29,7 +29,7 @@ class Serial(Base):
     __tablename__ = 'serials'
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    url: Mapped[str]
+    url: Mapped[str] = mapped_column(unique=True)
     last_episode: Mapped[str] = mapped_column(nullable=True)
     last_season: Mapped[str] = mapped_column(nullable=True)
 

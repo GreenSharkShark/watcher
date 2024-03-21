@@ -1,57 +1,87 @@
-from config.settings import bot
-from config.settings import BOT_TOKEN, Session, SUPPORTED_SITES
+from telebot import types
+from config.settings import Session, SUPPORTED_SITES, bot
 from models import User, Serial, Site
-from functions import parse_url
+from functions import save_user_data, parse_url, Menu, how_to_use_bot
+from sqlalchemy.exc import IntegrityError
 
 
 @bot.message_handler(commands=['start'])
 def start_bot(message):
     """ Запускается при первом старте бота, сохраняет данные пользователя """
 
-    with Session() as session:
-        existing_user = session.query(User).filter_by(tg_user_id=message.from_user.id).first()
-        if existing_user is None:
-            new_user = User()
-            new_user.username = message.from_user.username
-            new_user.first_name = message.from_user.first_name
-            new_user.last_name = message.from_user.last_name
-            new_user.tg_user_id = message.from_user.id
-            session.add(new_user)
-            session.commit()
-            notif = 'Новый пользователь зарегистрирован'
-            print(notif)
-            bot.send_message(message.from_user.id, notif)
-        else:
-            notif = 'Пользователь уже зарегистрирован'
-            print(notif)
-            bot.send_message(message.from_user.id, notif)
-    bot.send_message(message.chat.id, 'Что умеет этот бот?')
+    save_user_data(message)
+    Menu().main_menu(message)
 
 
-@bot.message_handler(commands=['tracking'])
-def tracking(message):
+@bot.callback_query_handler(func=lambda callback: not callback.data.startswith('delete'))
+def handle_callback_data(callback):
     """ Ожидает отправку пользователем ссылки на сериал """
 
-    sent = bot.send_message(text='Отправьте ссылку на страницу с сериалом', chat_id=message.chat.id)
-    bot.register_next_step_handler(sent, track)
+    if callback.data == 'tracking':
+        sent = bot.send_message(text='Отправьте ссылку на страницу с сериалом', chat_id=callback.message.chat.id)
+        bot.register_next_step_handler(sent, track)
+    elif callback.data == 'how_to_use':
+        how_to_use_bot(callback.message)
+    elif callback.data == 'tracking_list':
+        tracking_list(callback.message)
+    elif callback.data == 'menu':
+        Menu().main_menu(callback.message)
+    bot.answer_callback_query(callback.id)
 
 
 def track(message):
-    """ Парсит ссылку полученную из def tracking(message) """
+    """ Парсит ссылку полученную из def tracking(message) и отмечает сериал как отслеживаемый """
 
     website = parse_url(message.text)
-    if website in SUPPORTED_SITES:
-        with Session() as session:
-            user_object = session.query(User).filter_by(tg_user_id=message.from_user.id).first()
-            new_serial = Serial()
-            new_serial.url = message.text
-            new_serial.site = session.query(Site).filter_by(name=website).first()
-            new_serial.watching_users.append(user_object)
-            session.add(new_serial)
-            session.commit()
+    try:
+        if website['site'] in SUPPORTED_SITES.keys():
+            with Session() as session:
+                user_object = session.query(User).filter_by(tg_user_id=message.from_user.id).first()
+                new_serial = Serial()
+                new_serial.url = message.text
+                new_serial.site = session.query(Site).filter_by(name=website['site']).first()
+                new_serial.watching_users.append(user_object)
+                session.add(new_serial)
+                session.commit()
+                bot.send_message(text=f"Сериал добавлен в список отслеживаемых", chat_id=message.chat.id)
+                Menu().btn_return_to_menu(message)
+    except KeyError:
+        bot.send_message(text=f"Сайт не поддерживается, либо {website['error']}", chat_id=message.chat.id)
+    except IntegrityError:
+        bot.send_message(text='Этот сериал уже есть в вашем списке отслеживаемых', chat_id=message.chat.id)
+    finally:
+        Menu().btn_return_to_menu(message)
 
-    else:
-        bot.send_message(text='Сайт не поддерживается', chat_id=message.chat.id)
+
+def tracking_list(message):
+    with Session() as session:
+        tracked_list = session.query(Serial).all()
+        if not tracked_list:
+            bot.send_message(text='У вас нет отслеживаемых сериалов', chat_id=message.chat.id)
+            Menu().btn_return_to_menu(message)
+            return
+        bot.send_message(text='Ваш список отслеживаемых сериалов:', chat_id=message.chat.id)
+        for item in tracked_list:
+            markup = types.InlineKeyboardMarkup()
+            btn_delete = types.InlineKeyboardButton('Удалить', callback_data=f"delete_{item.id}")
+            markup.add(btn_delete)
+            bot.send_message(text=item.url, chat_id=message.chat.id, reply_markup=markup)
+        Menu().btn_return_to_menu(message)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete'))
+def handle_delete(call):
+    serial_id = int(call.data.split('_')[1])
+    with Session() as session:
+        serial_to_delete = session.query(Serial).filter_by(id=serial_id).first()
+        if not serial_to_delete:
+            bot.answer_callback_query(call.id, text='Не удалось найти сериал для удаления', show_alert=True)
+            return
+        session.delete(serial_to_delete)
+        session.commit()
+        bot.answer_callback_query(call.id, text='Сериал удален из списка отслеживаемых')
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              text='Сериал удален')
 
 
 bot.polling(none_stop=True)

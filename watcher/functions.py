@@ -1,4 +1,5 @@
-from config.settings import Session, bot
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup
+from config.settings import Session, bot, SUPPORTED_SITES
 from watcher.models import Site, User
 
 
@@ -46,3 +47,42 @@ def save_user_data(message) -> None:
         else:
             notif = 'Пользователь уже зарегистрирован'
             bot.send_message(message.from_user.id, notif)
+
+
+class Menu:
+    """ Вызывает главное меню бота """
+
+    @staticmethod
+    def main_menu(message):
+        markup = InlineKeyboardMarkup()
+        btn_how_to_use_bot = InlineKeyboardButton('Как пользоваться ботом?', callback_data='how_to_use')
+        markup.row(btn_how_to_use_bot)
+
+        btn_tracking = InlineKeyboardButton('Отслеживать сериал', callback_data='tracking')
+        markup.row(btn_tracking)
+
+        btn_list_of_tracked = InlineKeyboardButton('Список отслеживаемых сериалов', callback_data='tracking_list')
+        markup.row(btn_list_of_tracked)
+
+        bot.send_message(message.chat.id, 'Главное меню:', reply_markup=markup)
+
+    @staticmethod
+    def btn_return_to_menu(message):
+        markup = InlineKeyboardMarkup()
+        btn_menu = InlineKeyboardButton('Главное меню', callback_data='menu')
+        markup.row(btn_menu)
+        bot.send_message(message.chat.id, 'Вернуться в главное меню:', reply_markup=markup)
+
+
+def how_to_use_bot(message) -> None:
+    text = ('Для пользования ботом перейдите на любой сайт из списка ниже и найдите на нем сериал,'
+            'уведомления о выходе новых серий которого вы хотите получать, и скопируйте ссылку'
+            'на страницу с сериалом. Ссылка должна быть в формате "https://название,сайта/...",'
+            'например: "https://kinogo,fm/449-halo-1-2-sezon.html". Затем нажмите кнопку'
+            '"Отслеживать сериал" и отправьте скопированную ссылку.')
+    markup = InlineKeyboardMarkup()
+    for site_name, site_url in SUPPORTED_SITES.items():
+        btn_site = InlineKeyboardButton(site_name, url=site_url)
+        markup.add(btn_site)
+    bot.send_message(text=text, chat_id=message.chat.id, reply_markup=markup)
+    Menu().btn_return_to_menu(message)

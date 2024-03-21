@@ -17,7 +17,7 @@ DB_HOST = os.getenv('DB_HOST')
 DB_PORT = os.getenv('DB_PORT')
 DB_NAME = os.getenv('DB_NAME')
 
-SUPPORTED_SITES = ['kinogo.fm']
+SUPPORTED_SITES = {'kinogo.fm': 'https://kinogo.fm/'}
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
