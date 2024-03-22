@@ -15,7 +15,7 @@ def start_bot(message):
 
 @bot.callback_query_handler(func=lambda callback: not callback.data.startswith('delete'))
 def handle_callback_data(callback):
-    """ Ожидает отправку пользователем ссылки на сериал """
+    """ Обрабатывает кнопки главного меню """
 
     if callback.data == 'tracking':
         sent = bot.send_message(text='Отправьте ссылку на страницу с сериалом', chat_id=callback.message.chat.id)
@@ -26,7 +26,27 @@ def handle_callback_data(callback):
         tracking_list(callback.message)
     elif callback.data == 'menu':
         Menu().main_menu(callback.message)
+    elif callback.data == 'send_report':
+        sent = bot.send_message(text='Опишите вашу проблем или предложение. В данный момент'
+                                     'поддерживается отправка только текстовых сообщений.',
+                                chat_id=callback.message.chat.id)
+        bot.register_next_step_handler(sent, send_report)
     bot.answer_callback_query(callback.id)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith('delete'))
+def handle_delete(call):
+    serial_id = int(call.data.split('_')[1])
+    with Session() as session:
+        serial_to_delete = session.query(Serial).filter_by(id=serial_id).first()
+        if not serial_to_delete:
+            bot.answer_callback_query(call.id, text='Не удалось найти сериал для удаления', show_alert=True)
+            return
+        session.delete(serial_to_delete)
+        session.commit()
+        bot.answer_callback_query(call.id, text='Сериал удален из списка отслеживаемых')
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                              text='Сериал удален')
 
 
 def track(message):
@@ -69,19 +89,11 @@ def tracking_list(message):
         Menu().btn_return_to_menu(message)
 
 
-@bot.callback_query_handler(func=lambda call: call.data.startswith('delete'))
-def handle_delete(call):
-    serial_id = int(call.data.split('_')[1])
-    with Session() as session:
-        serial_to_delete = session.query(Serial).filter_by(id=serial_id).first()
-        if not serial_to_delete:
-            bot.answer_callback_query(call.id, text='Не удалось найти сериал для удаления', show_alert=True)
-            return
-        session.delete(serial_to_delete)
-        session.commit()
-        bot.answer_callback_query(call.id, text='Сериал удален из списка отслеживаемых')
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                              text='Сериал удален')
+def send_report(message) -> None:
+    """ Отправляет сообщение с кнопки "Проблемы и предложения" """
+    bot.send_message(chat_id=1276508620, text=f'Сообщение от @{message.from_user.username}:\n'
+                                              f'{message.text}')
+    Menu().btn_return_to_menu(message)
 
 
 bot.polling(none_stop=True)

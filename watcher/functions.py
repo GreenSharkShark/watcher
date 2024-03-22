@@ -64,6 +64,9 @@ class Menu:
         btn_list_of_tracked = InlineKeyboardButton('Список отслеживаемых сериалов', callback_data='tracking_list')
         markup.row(btn_list_of_tracked)
 
+        btn_send_report = InlineKeyboardButton('Проблемы и предложения', callback_data='send_report')
+        markup.row(btn_send_report)
+
         bot.send_message(message.chat.id, 'Главное меню:', reply_markup=markup)
 
     @staticmethod
