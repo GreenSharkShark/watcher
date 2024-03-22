@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy import Column, Integer, Table, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, mapped_column, Mapped
@@ -32,6 +34,7 @@ class Serial(Base):
     url: Mapped[str] = mapped_column(unique=True)
     last_episode: Mapped[str] = mapped_column(nullable=True)
     last_season: Mapped[str] = mapped_column(nullable=True)
+    last_update: Mapped[datetime] = mapped_column(nullable=True)
 
     watching_users = relationship('User', secondary=user_serial, back_populates='watching_serials')
 
