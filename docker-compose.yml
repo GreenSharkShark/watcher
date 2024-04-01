@@ -6,7 +6,7 @@ services:
     build:
       context: .
     command: |
-      bash -c "python watcher/bot.py"
+      bash -c "alembic upgrade head && python watcher/bot.py"
     tty: false
     volumes:
       - .:/watcher

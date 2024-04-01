@@ -64,7 +64,6 @@ def track(message):
                 session.add(new_serial)
                 session.commit()
                 bot.send_message(text=f"Сериал добавлен в список отслеживаемых", chat_id=message.chat.id)
-                Menu().btn_return_to_menu(message)
     except KeyError:
         bot.send_message(text=f"Сайт не поддерживается, либо {website['error']}", chat_id=message.chat.id)
     except IntegrityError:
