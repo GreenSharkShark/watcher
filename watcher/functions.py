@@ -7,7 +7,10 @@ def parse_url(url: str) -> str or dict:
     """ Парсит ссылку на сайт, чтобы убедиться что с этого сайта можно парсить инфу """
     try:
         site = url.split('/')
-        return {'site': site[2]}
+        if site[2]:
+            return {'site': site[2]}
+        else:
+            return {'error': 'Вы ввели неверную ссылку. Ссылка должна быть в формате "https://название.сайта/..."'}
     except IndexError:
         return {'error': 'Вы ввели неверную ссылку. Ссылка должна быть в формате "https://название.сайта/..."'}
 
