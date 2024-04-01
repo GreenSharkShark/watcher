@@ -1,0 +1,56 @@
+version: '3.11'
+
+services:
+  watcher_app:
+    container_name: watcher_app
+    build:
+      context: .
+    command: |
+      bash -c "python watcher/bot.py"
+    tty: false
+    volumes:
+      - .:/watcher
+    restart: on-failure
+    env_file:
+      - .env
+    depends_on: [watcher_db, redis_watcher, celery_watcher, beat_watcher]
+
+  watcher_db:
+    container_name: watcher_db
+    image: postgres:15.3-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - watcher_db:/var/lib/postgresql/data
+
+  celery_watcher:
+    container_name: celery_worker_watcher
+    build:
+      context: .
+    restart: on-failure
+    depends_on: [redis_watcher]
+    command: sh -c "celery -A config worker -l info"
+
+  beat_watcher:
+    container_name: celery_beat_watcher
+    build:
+      context: .
+    restart: on-failure
+    depends_on: [celery_watcher]
+    command: sh -c "celery -A config beat -l info"
+
+  redis_watcher:
+    container_name: redis_watcher
+    image: redis:6.0.16-alpine
+    hostname: redis
+
+volumes:
+  watcher_db:
+    driver: local

@@ -96,4 +96,5 @@ def send_report(message) -> None:
     Menu().btn_return_to_menu(message)
 
 
-bot.polling(none_stop=True)
+if __name__ == '__main__':
+    bot.polling(none_stop=True)
