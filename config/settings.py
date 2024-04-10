@@ -34,4 +34,4 @@ engine = create_engine(
 
 Session = sessionmaker(bind=engine)
 
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379')
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
