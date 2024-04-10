@@ -23,7 +23,7 @@ bot = telebot.TeleBot(BOT_TOKEN)
 
 
 def make_connection():
-    return f"postgresql+psycopg://{DB_USER}:{DB_PASS}@watcher_db:{DB_PORT}/{DB_NAME}"
+    return f"postgresql+psycopg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 
 engine = create_engine(
@@ -34,4 +34,4 @@ engine = create_engine(
 
 Session = sessionmaker(bind=engine)
 
-CELERY_BROKER_URL = 'redis://redis_watcher:6379'
+CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
