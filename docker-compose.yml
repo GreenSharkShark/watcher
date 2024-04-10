@@ -14,6 +14,8 @@ services:
     env_file:
       - .env
     depends_on: [watcher_db, redis_watcher, celery_watcher, beat_watcher]
+    networks:
+      - watcher_network
 
   watcher_db:
     container_name: watcher_db
@@ -29,6 +31,8 @@ services:
       retries: 5
     volumes:
       - watcher_db:/var/lib/postgresql/data
+    networks:
+      - watcher_network
 
   celery_watcher:
     container_name: celery_worker_watcher
@@ -37,6 +41,8 @@ services:
     restart: on-failure
     depends_on: [redis_watcher]
     command: sh -c "celery -A config worker -l info"
+    networks:
+      - watcher_network
 
   beat_watcher:
     container_name: celery_beat_watcher
@@ -45,12 +51,20 @@ services:
     restart: on-failure
     depends_on: [celery_watcher]
     command: sh -c "celery -A config beat -l info"
+    networks:
+      - watcher_network
 
   redis_watcher:
     container_name: redis_watcher
     image: redis:6.0.16-alpine
     hostname: redis
+    networks:
+      - watcher_network
 
 volumes:
   watcher_db:
     driver: local
+
+networks:
+  watcher_network:
+    driver: bridge
